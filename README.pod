@@ -222,6 +222,7 @@ Helper returns text with paragraph (<p />).
 New formats for a Mojolicious application.
 
 =over 1
+
 =item * min
 
 Type is text/html.
@@ -236,6 +237,7 @@ Template name is C<name.min.ep>.
 Add new shortcut to the routes of application.
 
 =over 1
+
 =item * crud
 
 Create-read-update-delete routes for admin item.
