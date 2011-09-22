@@ -1,0 +1,318 @@
+=head1 NAME
+
+Mojolicious::Plugin::UtilHelpers - some util helpers for web development
+
+=head1 SYNOPSIS
+
+	# Mojolicious
+	$self->plugin('util_helpers');
+	
+	# Mojolicious::Lite
+	plugin 'util_helpers';
+
+=head1 DESCRIPTION
+
+L<Mojolicous::Plugin::UtilHelpers> is a plugin contains util helpers.
+
+=head1 METHODS
+
+L<Mojolicious::Plugin::UtilHelpers> inherits all methods from
+L<Mojolicious::Plugin> and implements the following new ones.
+
+=head2 C<register>
+
+	$plugin->register;
+
+Register plugin hooks in L<Mojolicious> application.
+
+=head2 C<common>
+
+Common helpers.
+
+=over 3
+
+=item * db
+
+	$self->db
+
+DB helper, fast access to the dbh of application.
+
+=item * conf
+
+	$self->conf('server')->{www}
+	
+	# tmpl
+	%= conf('server')->{www}
+
+Conf helper, fast access to the conf of application.
+
+=item * vu
+
+	$self->vu(0)
+	
+	# tmpl
+	%= vu(0)
+
+Parts of URL path or vitrual URI.
+
+=back
+
+=head2 C<http>
+
+HTTP helpers.
+
+=over 10
+
+=item * is_iphone
+
+	$self->is_iphone
+
+Check User-Agent headers, returns true if ua =~ iPhone or iPod or iPad or CFNetworks.
+
+=item * is_mobile_device
+
+	$self->is_mobile_device
+
+Check User-Agent headers, returns true if ua =~ iPhone or iPod or iPad or Android or BlackBerry or Palm or Mobile.
+
+=item * is_mobile
+
+	$self->is_mobile
+
+Check User-Agent headers, same as C<is_mobile_device> without iPad.
+
+=item * ip
+
+	$self->ip
+
+Helper returns ip of client, check X-Forwarded-For header, than X-Real-IP header and at last remote address of client.
+
+=item * status
+
+	$self->status(404)
+
+Helper generates a response with any code without body.
+
+=item * redirect
+
+	$self->redirect( $url )
+
+302 redirect, uses return_url helper unless $url.
+
+=item * return_url
+
+	$self->return_url( $default_url )
+
+Helper can return previlous url (same as referer url, exclude login or logout or enter URL).
+If referer url is empty, return_url returns $default_url or root url '/'.
+
+=item * redirect_accel
+
+	$self->redirect_accel( $url, $content_type )
+
+Helper generates redirect with X-Accel-Redirect and Content-Type headers.
+
+=item * xhr_redirect
+
+	$self->xhr_redirect( { ok => 1 }, $redirect_url )
+
+Helper renders JSON (if request has X-HTTP-Request header) or return redirect helper.
+
+=item * get_cookie
+
+	$self->get_cookie( $name )
+
+Helper returns one value of cookie $name.
+
+=back
+
+=head2 C<util>
+
+Util helpers.
+
+=over 6
+
+=item * check_error
+
+	# tmpl
+	%= check_error 'field_name'
+
+Check stash error, if exists any errors, helper loads 'etc/validate' template and returns value of key 'field_name' in stash 'validate' hash.
+
+=item * list_splice
+
+	# tmpl
+	% my $new = list_slice $list, $count;
+
+Helper generates array of array (size is $count).
+
+=item * perl2json
+
+	$self->perl2json( $data )
+
+Helper encodes perl structure to JSON.
+
+=item * cat
+
+	$self->cat('about/info')
+
+Helper includes template file (format is html, handler is ep) without cache template.
+
+=item * meta
+
+	$self->meta
+
+Helper uses meta from conf and stash 'meta' if exists and generate new stash 'meta'.
+
+=item * page_param
+
+	$self->page_param( $page )
+
+Helper generates url, replace old page param.
+
+=back
+
+=head2 C<text>
+
+Text and string helpers.
+
+=over 6
+
+=item * format_digital
+	
+	%= format_digital 123456
+	
+Helper returns 123 456.
+Second parameters is separator, default value is space.
+
+=item * shorty
+
+	%= shorty $str, $length
+	
+Helper returns short string, $length is length of short string, default value is 20.
+
+=item * shorty_fix
+
+	%== shorty_fix $str, $length
+	
+Helper same as shorty, but tries fix bad tags.
+
+=item * link_title
+
+	%= link_title $link
+	
+Helper returns ucfirst name of domain.
+
+=item * text_url
+
+	%== text_url $text
+	
+Helper returns $text, where links are real href (<a href="$link" target="_blank">$link</a>).
+
+=item * paragraph
+
+	%== paragraph $info
+	
+Helper returns text with paragraph (<p />).
+
+=back
+
+=head2 C<format>
+
+New formats for a Mojolicious application.
+
+=over 1
+=item * min
+
+Type is text/html.
+After static dispatch set stash 'format' as 'min' if request has min parameters.
+
+Template name is C<name.min.ep>.
+
+=back
+
+=head2 C<route>
+
+Add new shortcut to the routes of application.
+
+=over 1
+=item * crud
+
+Create-read-update-delete routes for admin item.
+
+	$r->crud(blog => 'admin-blog');
+	
+There are a lot of routes:
+
+	GET  /blog -> admin-blog#list (name is admin_blog)
+	POST /blog -> admin-blog#listing
+	
+	GET  /blog/sort -> admin-blog#sort (admin_blog_sort)
+	POST /blog/sort -> admin-blog#sorting
+	
+	GET  /blog/add  -> admin-blog#form, stash 'add' => 1 (admin_blog_add)
+	POST /blog/add  -> admin-blog#add
+	
+	bridge /blog/:id, id => qr/\d+/ -> admin-blog#check
+	
+	GET  /blog/:id -> admin-blog#item (admin_blog_item)
+	
+	GET  /blog/:id/edit -> admin-blog#form (admin_blog_edit)
+	POST /blog/:id/edit -> admin-blog#edit
+	
+	GET  /blog/:id/remove -> admin-blog#remove (admin_blog_remove)
+	
+	GET  /blog/:id/:filter -> admin-blog#list (admin_blog)
+
+=back
+
+=head1 SEE ALSO
+
+L<Mojolicious>, L<Mojolicious::Guides>, L<http://mojolicious.org>.
+
+=head1 AUTHOR
+
+Anatoly Sharifulin <sharifulin@gmail.com>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to C<bug-mojolicious-plugin-UtilHelpers at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.htMail?Queue=Mojolicious-Plugin-UtilHelpers>.  We will be notified, and then you'll
+automatically be notified of progress on your bug as we make changes.
+
+=over 5
+
+=item * Github
+
+L<http://github.com/sharifulin/Mojolicious-Plugin-UtilHelpers/tree/master>
+
+=item * RT: CPAN's request tracker
+
+L<http://rt.cpan.org/NoAuth/Bugs.htMail?Dist=Mojolicious-Plugin-UtilHelpers>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Mojolicious-Plugin-UtilHelpers>
+
+=item * CPANTS: CPAN Testing Service
+
+L<http://cpants.perl.org/dist/overview/Mojolicious-Plugin-UtilHelpers>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Mojolicious-Plugin-UtilHelpers>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Mojolicious-Plugin-UtilHelpers>
+
+=back
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (C) 2010-2011 by Anatoly Sharifulin.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
