@@ -1,7 +1,7 @@
 package Mojolicious::Plugin::UtilHelpers;
 use Mojo::Base 'Mojolicious::Plugin';
 
-our $VERSION = '0.5_3';
+our $VERSION = '0.6';
 
 use Encode ();
 use Mojo::JSON;
@@ -28,7 +28,7 @@ sub common {
 	my ($self, $app, $conf) = @_;
 	
 	$app->helper(db     => sub { shift->app->db });
-	$app->helper(conf   => sub { shift->app->conf->{+shift} });
+	$app->helper(conf   => sub { my $conf = shift->app->conf; return ($_ ? $conf->{$_} : $conf) for +shift;});
 	$app->helper(vu     => sub { shift->tx->req->url->path->parts->[+shift] || '' });
 	$app->helper(dumper => sub {
 		shift;
@@ -90,14 +90,16 @@ sub http {
 	});
 
 	$app->helper(redirect_accel => sub { my $self = shift;
-		my $url  = shift || return;
-		my $type = shift || '';
-
+		my $url   = shift || return;
+		my $type  = shift || '';
+		my $fname = shift;
+		
 		for ($self->res->headers) {
 			$_->content_type( $type );
-			$_->header( 'X-Accel-Redirect' => $url );
+			$_->header( 'Content-Disposition' => "attachment; filename=$fname" ) if $fname;
+			$_->header( 'X-Accel-Redirect'    => $url );
 		}
-
+		
 		$self->rendered;
 	});
 	
@@ -122,6 +124,16 @@ sub http {
 sub util {
 	my ($self, $app, $conf) = @_;
 	
+	$app->helper(render_html => sub {
+		my $self = shift;
+		my $tmpl = shift || return '';
+
+		my $html = $self->render_partial($tmpl, format => 'html', @_);
+		$html =~ s{\n+}{}sg; $html =~ s{\t+}{}sg;
+
+		$html;
+	});
+	
 	$app->helper(check_error => sub {
 		my $self  = shift;
 		my $field = shift || return;
@@ -136,9 +148,10 @@ sub util {
 	
 	$app->helper(list_splice => sub {
 		my $self  = shift;
-		my $list  = shift || return [];
+		my $temp  = shift || return [];
 		my $count = shift || 2;
 		
+		my $list  = [ @$temp ];
 		my $new; push @$new, [grep { $_ } splice @$list, 0, $count] while @$list;
 		return $new;
 	});
@@ -202,6 +215,8 @@ sub text {
 		my $self = shift;
 		my $d    = shift || return;
 		my $sep  = shift || ' ';
+		
+		return $d if $d < 10_000;
 		
 		$d =~ s/(\d)(?=((\d{3})+)(\D|$))/$1$sep/g;
 		return $d;
@@ -286,12 +301,13 @@ sub route {
 	my ($self, $app, $conf) = @_;
 	
 	$app->routes->add_shortcut(crud => sub {
-		my($r, $name, $controller) = @_;
+		my($r, $name, $controller, $item_check) = @_;
 		
 		unless ($controller) {
 			$controller = $name;
 			$controller =~ s{/}{-}g;
 		}
+		$item_check ||= qr/\d+/;
 		
 		(my $rname = $controller) =~ s{-}{_}g;
 		
@@ -304,9 +320,9 @@ sub route {
 		$t->route('/sort')->post->to('#sorting')->name($rname.'_sort');
 		
 		$t->route('/add')->get ->to('#form', add => 1)->name($rname.'_add');
-		$t->route('/add')->post->to('#add' );
+		$t->route('/add')->post->to('#add',  add => 1);
 		
-		my $one = $t->bridge('/:id', id => qr/\d+/)->to('#check');
+		my $one = $t->bridge('/:id', id => $item_check)->to('#check');
 		$one->route->to('#item')->name($rname.'_item');
 		$one->route('/edit')->get ->to('#form')->name($rname.'_edit');
 		$one->route('/edit')->post->to('#edit');
@@ -632,7 +648,7 @@ L<http://search.cpan.org/dist/Mojolicious-Plugin-UtilHelpers>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright (C) 2010-2011 by Anatoly Sharifulin.
+Copyright (C) 2010-2013 by Anatoly Sharifulin.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
