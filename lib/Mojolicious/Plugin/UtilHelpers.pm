@@ -1,7 +1,7 @@
 package Mojolicious::Plugin::UtilHelpers;
 use Mojo::Base 'Mojolicious::Plugin';
 
-our $VERSION = '0.6';
+our $VERSION = '0.7';
 
 use Encode ();
 use Mojo::JSON;
@@ -128,7 +128,7 @@ sub util {
 		my $self = shift;
 		my $tmpl = shift || return '';
 
-		my $html = $self->render_partial($tmpl, format => 'html', @_);
+		my $html = $self->render($tmpl, partial => 1, format => 'html', @_);
 		$html =~ s{\n+}{}sg; $html =~ s{\t+}{}sg;
 
 		$html;
@@ -141,7 +141,7 @@ sub util {
 		return unless $self->stash('error');
 		
 		if (my $error = $self->stash('error')->{ $field }) {
-			$self->render_partial('etc/validate') unless $self->stash('validate');
+			$self->render('etc/validate', partial => 1) unless $self->stash('validate');
 			return $self->stash('validate')->{ $error } || $error;
 		}
 	});
@@ -290,7 +290,7 @@ sub format {
 	# min support
 	
 	$app->types->type(min => 'text/html');
-	$app->plugins->add_hook(after_static_dispatch => sub {
+	$app->hook(after_static => sub {
 		my $c = shift;
 		# warn('Min format ' . $c->req->url),
 		$c->stash(format => 'min') if $c->req->param('min');
