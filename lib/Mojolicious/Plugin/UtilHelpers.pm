@@ -213,7 +213,7 @@ sub text {
 	
 	$app->helper(format_digital => sub {
 		my $self = shift;
-		my $d    = shift || return;
+		my $d    = shift || return 0;
 		my $sep  = shift || ' ';
 		
 		return $d if $d < 10_000;
@@ -328,7 +328,7 @@ sub route {
 		$one->route('/edit')->post->to('#edit');
 		$one->route('/remove')->to('#remove')->name($rname.'_remove');
 		
-		$t->route('/:filter')->get->to('#list')->name($rname);
+		$t->route('/:filter')->get->to('#list')->name($rname.'_filter');
 	});
 }
 
